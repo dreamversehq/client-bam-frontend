@@ -8,9 +8,12 @@ const config: Config = {
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
   ],
-  theme: {
-  	extend: {
-  		colors: {
+	theme: {
+		fontFamily: {
+			sans: ["Inter", "sans-serif"],
+		},
+		extend: {
+		colors: {
   			pink: {
   				'50': '#FFE3F5',
   				'100': '#FFB8E5',

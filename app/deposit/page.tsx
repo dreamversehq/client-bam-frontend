@@ -9,6 +9,8 @@ import { usePaystack } from "../../hooks/usePaystack";
 import Toast from "@/UI/Toast";
 
 
+import ClientDashboardShell from "../dashboard/components/ClientDashboardShell";
+
 export default function DepositPage() {
   const { pay } = usePaystack();
   const [amount, setAmount] = React.useState("");
@@ -40,45 +42,53 @@ export default function DepositPage() {
   };
 
   return (
-    <>
+    <ClientDashboardShell>
       <Toast
         open={toast.open}
         message={toast.message}
         type={toast.type}
         onClose={() => setToast((t) => ({ ...t, open: false }))}
       />
-      <div className="flex min-h-screen items-center justify-center bg-muted">
-        <Card className="w-full max-w-md shadow-xl">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold text-gray-900">Deposit Funds</h1>
+          <p className="text-sm text-gray-500">Add money to your account securely.</p>
+        </div>
+
+        <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Deposit Funds</CardTitle>
+            <CardTitle>Make a Deposit</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-6 text-center">
-              <span className="text-gray-500 text-sm">Current Balance</span>
-              <div className="text-3xl font-bold text-pink-500 mt-1 mb-2">₦{balance.toLocaleString()}</div>
+            <div className="mb-6 p-4 bg-pink-50 rounded-lg border border-pink-100">
+              <span className="text-pink-600 text-sm font-medium">Current Balance</span>
+              <div className="text-3xl font-bold text-pink-700 mt-1">₦{balance.toLocaleString()}</div>
             </div>
             <form className="space-y-4" onSubmit={handleDeposit}>
-              <Input
-                type="number"
-                min="1"
-                step="any"
-                placeholder="Enter deposit amount"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                className="text-lg"
-                required
-              />
+              <div className="space-y-2">
+                <label htmlFor="amount" className="text-sm font-medium">Amount (₦)</label>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="1"
+                  step="any"
+                  placeholder="Enter deposit amount"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  required
+                />
+              </div>
               {error && <div className="text-red-500 text-sm">{error}</div>}
               <Button
                 type="submit"
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded-lg text-lg font-semibold py-3"
+                className="w-full bg-pink-600 hover:bg-pink-700 text-white"
               >
-                Deposit
+                Proceed to Payment
               </Button>
             </form>
           </CardContent>
         </Card>
       </div>
-    </>
+    </ClientDashboardShell>
   );
 }
