@@ -8,7 +8,8 @@ import ClientDashboardShell from "@/app/dashboard/components/ClientDashboardShel
 import { authApi, transactionApi } from "@/utils/api";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function DepositPage() {
+// Component that uses searchParams - wrapped in Suspense
+function DepositContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Paystack can return 'reference' or 'trxref'
@@ -143,5 +144,23 @@ export default function DepositPage() {
         </Card>
       </div>
     </ClientDashboardShell>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function DepositPage() {
+  return (
+    <React.Suspense fallback={
+      <ClientDashboardShell>
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Deposit Funds</h1>
+            <p className="text-sm text-gray-500">Loading...</p>
+          </div>
+        </div>
+      </ClientDashboardShell>
+    }>
+      <DepositContent />
+    </React.Suspense>
   );
 }
