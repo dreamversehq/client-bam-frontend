@@ -1,16 +1,17 @@
 "use client";
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { authApi } from "@/utils/api";
 
-import Toast from "@/UI/Toast";
-
-
+import Toast from "@/components/UI/Toast";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -19,7 +20,7 @@ export default function RegisterPage() {
   const [error, setError] = React.useState("");
   const [toast, setToast] = React.useState<{ open: boolean; message: string; type: "success" | "error" | "info" }>({ open: false, message: "", type: "info" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
@@ -27,12 +28,31 @@ export default function RegisterPage() {
       setToast({ open: true, message: "Passwords do not match", type: "error" });
       return;
     }
+    
     setLoading(true);
-    // TODO: Implement registration logic
-    setTimeout(() => {
+    try {
+      // Split name into first and last name
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || 'User'; // Fallback if no last name
+
+      await authApi.register({ 
+        email, 
+        password, 
+        firstName, 
+        lastName 
+      });
+      
+      setToast({ open: true, message: "Registration successful!", type: "success" });
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } catch (error: any) {
+      const message = error.response?.data?.message || "Registration failed. Please try again.";
+      setToast({ open: true, message, type: "error" });
+    } finally {
       setLoading(false);
-      setToast({ open: true, message: "Registration successful! (mock)", type: "success" });
-    }, 1000);
+    }
   };
 
   return (

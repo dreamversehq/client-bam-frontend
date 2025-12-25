@@ -1,31 +1,38 @@
 "use client";
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { authApi } from "@/utils/api";
 
-
-import Toast from "@/UI/Toast";
+import Toast from "@/components/UI/Toast";
 import { FcGoogle } from "react-icons/fc";
 
-
-
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [toast, setToast] = React.useState<{ open: boolean; message: string; type: "success" | "error" | "info" }>({ open: false, message: "", type: "info" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // TODO: Implement login logic
-    setTimeout(() => {
+    try {
+      await authApi.login({ email, password });
+      setToast({ open: true, message: "Login successful!", type: "success" });
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } catch (error: any) {
+      const message = error.response?.data?.message || "Login failed. Please check your credentials.";
+      setToast({ open: true, message, type: "error" });
+    } finally {
       setLoading(false);
-      setToast({ open: true, message: "Login successful! (mock)", type: "success" });
-    }, 1000);
+    }
   };
 
   const handleGoogleLogin = () => {
