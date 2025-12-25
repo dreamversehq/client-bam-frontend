@@ -2,6 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CalendarClock, MapPin } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -17,9 +18,10 @@ const formatDate = (dateString: string) => {
 interface RecentDepositsProps {
   amount: number;
   date: string;
+  isLoading?: boolean;
 }
 
-export function RecentDeposits({ amount, date }: RecentDepositsProps) {
+export function RecentDeposits({ amount, date, isLoading = false }: RecentDepositsProps) {
   return (
     <Card className={cn("bg-white shadow-sm border border-gray-100 rounded-xl p-5 flex flex-col justify-center h-full hover:shadow-md transition-shadow")}> 
       <CardContent className="p-0">
@@ -30,8 +32,17 @@ export function RecentDeposits({ amount, date }: RecentDepositsProps) {
           <span className="text-sm font-medium text-gray-500">Last Deposit</span>
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-2xl font-bold text-gray-900">₦{amount.toLocaleString()}</div>
-          <div className="text-xs font-medium text-gray-400">{formatDate(date)}</div>
+          {isLoading ? (
+            <>
+              <Skeleton className="h-8 w-32 mb-1" />
+              <Skeleton className="h-4 w-24" />
+            </>
+          ) : (
+            <>
+              <div className="text-2xl font-bold text-gray-900">₦{amount.toLocaleString()}</div>
+              <div className="text-xs font-medium text-gray-400">{formatDate(date)}</div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -41,9 +52,10 @@ export function RecentDeposits({ amount, date }: RecentDepositsProps) {
 interface LastLoginProps {
   date: string;
   location?: string;
+  isLoading?: boolean;
 }
 
-export function LastLogin({ date, location }: LastLoginProps) {
+export function LastLogin({ date, location, isLoading = false }: LastLoginProps) {
   return (
     <Card className={cn("bg-white shadow-sm border border-gray-100 rounded-xl p-5 flex flex-col justify-center h-full hover:shadow-md transition-shadow")}> 
       <CardContent className="p-0">
@@ -54,8 +66,17 @@ export function LastLogin({ date, location }: LastLoginProps) {
           <span className="text-sm font-medium text-gray-500">Last Login</span>
         </div>
         <div className="flex flex-col gap-1">
-          <div className="text-lg font-bold text-gray-900">{formatDate(date)}</div>
-          {location && <div className="text-xs font-medium text-gray-400">{location}</div>}
+          {isLoading ? (
+            <>
+              <Skeleton className="h-6 w-32 mb-1" />
+              <Skeleton className="h-4 w-24" />
+            </>
+          ) : (
+            <>
+              <div className="text-lg font-bold text-gray-900">{formatDate(date)}</div>
+              {location && <div className="text-xs font-medium text-gray-400">{location}</div>}
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { Transaction, TransactionType, TransactionStatus } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -22,7 +23,36 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-const TransactionsTable = ({ transactions }: { transactions: Transaction[] }) => {
+const TransactionsTable = ({ transactions, isLoading = false }: { transactions: Transaction[]; isLoading?: boolean }) => {
+  if (isLoading) {
+    return (
+      <div className="w-full overflow-x-auto">
+        <Table className="min-w-[600px] md:min-w-full">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-b border-gray-100">
+              <TableHead className="w-[100px] font-medium text-gray-500 text-xs uppercase tracking-wider pl-6">Type</TableHead>
+              <TableHead className="hidden md:table-cell font-medium text-gray-500 text-xs uppercase tracking-wider">Transaction ID</TableHead>
+              <TableHead className="font-medium text-gray-500 text-xs uppercase tracking-wider">Status</TableHead>
+              <TableHead className="font-medium text-gray-500 text-xs uppercase tracking-wider">Date</TableHead>
+              <TableHead className="text-right font-medium text-gray-500 text-xs uppercase tracking-wider pr-6">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i} className="border-b border-gray-50">
+                <TableCell className="pl-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell className="pr-6"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full overflow-x-auto">
       <Table className="min-w-[600px] md:min-w-full">

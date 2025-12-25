@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AuthResponse, LoginRequest, RegisterRequest, Transaction, TransactionResponse, User } from '../types';
 
-const API_URL = 'http://localhost:8000/v1';
+const API_URL = 'https://client-bam-backend.onrender.com/v1';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -230,8 +230,10 @@ export const transactionApi = {
     return data;
   },
 
-  initiateDeposit: async (amount: number): Promise<{ authorizationUrl: string; reference: string }> => {
-    const response = await api.post('/transactions/me/deposit/initiate', { amount, currency: 'NGN' });
+  initiateDeposit: async (amount: number, callbackUrl?: string): Promise<{ authorizationUrl: string; reference: string }> => {
+    const payload: any = { amount, currency: 'NGN' };
+    if (callbackUrl) payload.callbackUrl = callbackUrl;
+    const response = await api.post('/transactions/me/deposit/initiate', payload);
     const data = (response.data as any).data || response.data;
     return data;
   },

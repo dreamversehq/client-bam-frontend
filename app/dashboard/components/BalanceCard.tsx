@@ -1,8 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Wallet } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const BalanceCard = ({ balance }: { balance: number }) => {
+const BalanceCard = ({ balance, isLoading = false }: { balance: number; isLoading?: boolean }) => {
   return (
     <Card className={cn(
       "bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl rounded-2xl border-0 overflow-hidden relative h-full min-h-[200px]"
@@ -15,9 +16,13 @@ const BalanceCard = ({ balance }: { balance: number }) => {
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium text-gray-400 uppercase tracking-wider">Total Balance</span>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mt-2">
-              ₦{balance.toLocaleString()}
-            </h2>
+            {isLoading ? (
+              <Skeleton className="h-12 w-48 bg-white/10 mt-2" />
+            ) : (
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white mt-2">
+                ₦{balance.toLocaleString()}
+              </h2>
+            )}
           </div>
           <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
             <Wallet className="w-6 h-6 text-pink-400" />

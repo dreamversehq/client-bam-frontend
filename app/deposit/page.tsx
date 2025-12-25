@@ -11,7 +11,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 export default function DepositPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const reference = searchParams.get("reference");
+  // Paystack can return 'reference' or 'trxref'
+  const reference = searchParams.get("reference") || searchParams.get("trxref");
   
   const [amount, setAmount] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -21,26 +22,29 @@ export default function DepositPage() {
 
   // Handle Paystack Callback
   React.useEffect(() => {
-    const verify = async () => {
-      if (reference) {
-        setLoading(true);
-        try {
-          await transactionApi.verifyDeposit(reference);
-          setToast({ open: true, message: "Deposit verified successfully!", type: "success" });
-          // Clear param and refresh balance
-          router.replace('/deposit');
-          const bal = await transactionApi.getBalance();
-          setBalance(bal);
-        } catch (error) {
-          console.error("Verification failed", error);
-          setToast({ open: true, message: "Deposit verification failed or already processed.", type: "info" });
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    verify();
-  }, [reference, router]);
+    // Debug log to see what params we have
+    console.log("[DepositPage] Current Search Params:", searchParams.toString());
+    
+    if (reference) {
+      console.log("[DepositPage] Payment return detected. Reference:", reference);
+      
+      // Fire and forget verification - Background only
+      console.log("[DepositPage] Triggering background verification...");
+      transactionApi.verifyDeposit(reference)
+        .then((res) => console.log("[DepositPage] Verification response (background):", res))
+        .catch((err) => console.error("[DepositPage] Verification error (background):", err));
+
+      setToast({ open: true, message: "Payment successful! Redirecting to dashboard...", type: "success" });
+      
+      // Redirect to dashboard without waiting for verification
+      console.log("[DepositPage] Redirecting to dashboard...");
+      const timer = setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [reference, router, searchParams]);
 
   React.useEffect(() => {
     const fetchUser = async () => {
@@ -72,8 +76,12 @@ export default function DepositPage() {
 
     setLoading(true);
     try {
-      const response = await transactionApi.initiateDeposit(amt);
+      // Pass current URL as callback URL to ensure Paystack redirects back here
+      const callbackUrl = window.location.href.split('?')[0]; // Remove any existing query params
+      const response = await transactionApi.initiateDeposit(amt, callbackUrl);
+      console.log('RESPONSE', response)
       if (response.authorizationUrl) {
+        console.log("Redirecting to Paystack:", response.authorizationUrl);
         window.location.href = response.authorizationUrl;
       } else {
         setToast({ open: true, message: "Failed to initialize payment", type: "error" });

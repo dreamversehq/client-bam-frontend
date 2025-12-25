@@ -16,10 +16,14 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Separate loading states
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [loadingBalance, setLoadingBalance] = useState(true);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchUser = async () => {
       try {
         const currentUser = await authApi.getCurrentUser();
         if (!currentUser) {
@@ -27,16 +31,27 @@ export default function DashboardPage() {
           return;
         }
         setUser(currentUser);
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
 
-        // Fetch balance and transactions in parallel
-        const [balanceData, txResponse] = await Promise.all([
-          transactionApi.getBalance(),
-          transactionApi.getTransactions(1, 20) // Fetch more to show in tabs
-        ]);
-
+    const fetchBalance = async () => {
+      try {
+        const balanceData = await transactionApi.getBalance();
         setBalance(balanceData);
+      } catch (error) {
+        console.error("Failed to fetch balance:", error);
+      } finally {
+        setLoadingBalance(false);
+      }
+    };
 
-        // txResponse is PaginatedResponse { data: Transaction[], pagination: ... }
+    const fetchTransactions = async () => {
+      try {
+        const txResponse = await transactionApi.getTransactions(1, 20);
         if (txResponse && Array.isArray(txResponse.data)) {
           setTransactions(txResponse.data);
         } else {
@@ -44,20 +59,21 @@ export default function DashboardPage() {
           setTransactions([]);
         }
       } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+        console.error("Failed to fetch transactions:", error);
       } finally {
-        setLoading(false);
+        setLoadingTransactions(false);
       }
     };
 
-    fetchData();
+    // Trigger all fetches independently
+    fetchUser();
+    fetchBalance();
+    fetchTransactions();
   }, [router]);
 
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
-
-  if (!user) return null;
+  // Only block if user is strictly required for the layout structure (e.g. name in header)
+  // But we can even skeleton that.
+  // However, if auth fails, we redirect. So we can render the page with skeletons.
 
   const lastDeposit = transactions.find(tx => tx.type === TransactionType.CREDIT);
   
@@ -70,7 +86,11 @@ export default function DashboardPage() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome back, {user.firstName}! Here's an overview of your account.</p>
+          {loadingUser ? (
+             <div className="mt-1 h-5 w-64 bg-gray-200 rounded animate-pulse"></div>
+          ) : (
+             <p className="text-sm text-gray-500 mt-1">Welcome back, {user?.firstName}! Here's an overview of your account.</p>
+          )}
         </div>
         <div className="flex items-center gap-2">
            <button 
@@ -86,14 +106,19 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 h-full">
-           <BalanceCard balance={balance} />
+           <BalanceCard balance={balance} isLoading={loadingBalance} />
         </div>
         <div className="flex flex-col gap-4 h-full">
            <RecentDeposits 
              amount={lastDeposit ? lastDeposit.amount : 0} 
              date={lastDeposit ? lastDeposit.createdAt : new Date().toISOString()} 
+             isLoading={loadingTransactions}
            />
-           <LastLogin date={new Date().toISOString()} location="Lagos, NG" />
+           <LastLogin 
+             date={new Date().toISOString()} 
+             location="Lagos, NG" 
+             isLoading={false} // Static data for now
+           />
         </div>
       </section>
 
@@ -119,17 +144,13 @@ export default function DashboardPage() {
           </div>
           
           <TabsContent value="all" className="p-0 mt-0">
-            <TransactionsTable transactions={transactions} />
+            <TransactionsTable transactions={transactions} isLoading={loadingTransactions} />
           </TabsContent>
           <TabsContent value="pending" className="p-0 mt-0">
-            {pendingTransactions.length > 0 ? (
-              <TransactionsTable transactions={pendingTransactions} />
-            ) : (
-              <div className="p-8 text-center text-gray-500 text-sm">No pending transactions</div>
-            )}
+            <TransactionsTable transactions={pendingTransactions} isLoading={loadingTransactions} />
           </TabsContent>
           <TabsContent value="completed" className="p-0 mt-0">
-            <TransactionsTable transactions={completedTransactions} />
+            <TransactionsTable transactions={completedTransactions} isLoading={loadingTransactions} />
           </TabsContent>
         </Tabs>
       </section>
