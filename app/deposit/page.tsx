@@ -4,6 +4,7 @@ import { NumericFormat } from 'react-number-format';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import Toast from "@/components/UI/Toast";
 import ClientDashboardShell from "@/app/dashboard/components/ClientDashboardShell";
 import { authApi, transactionApi } from "@/utils/api";
@@ -20,6 +21,7 @@ function DepositContent() {
   const [loading, setLoading] = React.useState(false);
   const [userEmail, setUserEmail] = React.useState("");
   const [balance, setBalance] = React.useState(0);
+  const [loadingBalance, setLoadingBalance] = React.useState(true);
   const [toast, setToast] = React.useState<{ open: boolean; message: string; type: "success" | "error" | "info" }>({ open: false, message: "", type: "info" });
 
   // Handle Paystack Callback
@@ -29,22 +31,14 @@ function DepositContent() {
     
     if (reference) {
       console.log("[DepositPage] Payment return detected. Reference:", reference);
-      
-      // Fire and forget verification - Background only
-      console.log("[DepositPage] Triggering background verification...");
-      transactionApi.verifyDeposit(reference)
-        .then((res) => console.log("[DepositPage] Verification response (background):", res))
-        .catch((err) => console.error("[DepositPage] Verification error (background):", err));
-
-      setToast({ open: true, message: "Payment successful! Redirecting to dashboard...", type: "success" });
-      
-      // Redirect to dashboard without waiting for verification
-      console.log("[DepositPage] Redirecting to dashboard...");
-      const timer = setTimeout(() => {
-        router.push('/dashboard');
-      }, 2000);
-
-      return () => clearTimeout(timer);
+      // Redirect directly to dashboard and preserve the reference in the query
+      // so dashboard can perform verification and then fetch fresh data.
+      try {
+        router.replace(`/dashboard?reference=${encodeURIComponent(reference)}`);
+      } catch (e) {
+        // fallback
+        router.push(`/dashboard?reference=${encodeURIComponent(reference)}`);
+      }
     }
   }, [reference, router, searchParams]);
 
@@ -55,11 +49,14 @@ function DepositContent() {
         setUserEmail(user.email);
         // Fetch real balance
         try {
+          setLoadingBalance(true);
           const bal = await transactionApi.getBalance();
           setBalance(bal);
         } catch (e) {
           console.error("Failed to fetch balance", e);
           setBalance(0);
+        } finally {
+          setLoadingBalance(false);
         }
       } else {
         router.push("/auth/login");
@@ -81,8 +78,11 @@ function DepositContent() {
 
     setLoading(true);
     try {
-      // Pass current URL as callback URL to ensure Paystack redirects back here
-      const callbackUrl = window.location.href.split('?')[0]; // Remove any existing query params
+  // Use dashboard as the callback so Paystack redirects directly to /dashboard
+  // (avoids landing on the deposit page first). This URL is passed to the backend
+  // when initiating the transaction and should be honored by the payment flow.
+  const callbackUrl = new URL('/dashboard', window.location.origin).toString();
+  console.log('[DepositPage] initiating deposit payload:', { amount: amt, callbackUrl });
       const response = await transactionApi.initiateDeposit(amt, callbackUrl);
       console.log('RESPONSE', response)
       if (response.authorizationUrl) {
@@ -120,7 +120,12 @@ function DepositContent() {
           <CardContent>
             <div className="mb-6 p-4 bg-pink-50 rounded-lg border border-pink-100">
               <span className="text-pink-600 text-sm font-medium">Current Balance</span>
-              <div className="text-3xl font-bold text-pink-700 mt-1">₦{(balance || 0).toLocaleString()}</div>
+              {loadingBalance ? (
+                // Show the whole card area as a pink skeleton (inherit card color)
+                <Skeleton className="h-20 w-full mt-2 rounded-lg bg-pink-50/90" />
+              ) : (
+                <div className="text-3xl font-bold text-pink-700 mt-1">₦{(balance || 0).toLocaleString()}</div>
+              )}
             </div>
             <form className="space-y-4" onSubmit={handleDeposit}>
               <div className="space-y-2">
