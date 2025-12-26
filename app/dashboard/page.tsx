@@ -8,14 +8,13 @@ import { RecentDeposits, LastLogin } from "./components/DashboardWidgets";
 import { Plus } from "lucide-react";
 import { authApi, transactionApi } from "@/utils/api";
 import { User, Transaction, TransactionType, TransactionStatus } from "@/types";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const reference = searchParams.get("reference") || searchParams.get("trxref");
+  // Reference will be read from window.location.search inside the effect (client-only)
   const [user, setUser] = useState<User | null>(null);
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -25,9 +24,7 @@ export default function DashboardPage() {
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
   const [toast, setToast] = useState<{ open: boolean; message: string; type: "success" | "error" | "info" }>({ open: false, message: "", type: "info" });
-
   useEffect(() => {
-
     const fetchUser = async () => {
       try {
         const currentUser = await authApi.getCurrentUser();
@@ -70,23 +67,29 @@ export default function DashboardPage() {
       }
     };
 
-    // If Paystack redirected with a reference, verify it first so subsequent reads return fresh data.
+    // Read reference from window.location (client-only) and if present verify it before fetching data
     const runAll = async () => {
+      let reference: string | null = null;
+      try {
+        if (typeof window !== 'undefined') {
+          const sp = new URLSearchParams(window.location.search);
+          reference = sp.get('reference') || sp.get('trxref');
+        }
+      } catch (e) {
+        reference = null;
+      }
+
       if (reference) {
         console.log('[Dashboard] Detected payment reference in URL:', reference);
         try {
-          // Block loading state until verification completes so balance fetch sees updated data
           console.log('[Dashboard] Verifying transaction before loading dashboard data...');
           await transactionApi.verifyDeposit(reference);
           console.log('[Dashboard] Verification call finished (ignoring response).');
-          // Show success toast to inform the user the deposit was processed
-          setToast({ open: true, message: 'Deposit successful!', type: 'success' });
+          setToast({ open: true, message: 'Deposit successful! Updating balance...', type: 'success' });
         } catch (err) {
           console.error('[Dashboard] Verification call failed (ignored):', err);
-          // Optionally inform the user verification failed (kept minimal)
           setToast({ open: true, message: 'Deposit verification failed (will retry in background)', type: 'error' });
         } finally {
-          // Strip query param so URL is clean
           try {
             router.replace('/dashboard');
           } catch (e) {
@@ -102,7 +105,7 @@ export default function DashboardPage() {
     };
 
     runAll();
-  }, [router, reference]);
+  }, [router]);
 
   // Only block if user is strictly required for the layout structure (e.g. name in header)
   // But we can even skeleton that.
