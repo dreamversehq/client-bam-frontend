@@ -38,6 +38,8 @@ type SidebarProps = {
 
 export default function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
+  // Support email (build-time env var). Falls back to kata@dreamverse.ng
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'kata@dreamverse.ng';
   
   // Sidebar content
   const sidebarNav = (
@@ -78,7 +80,12 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
 
       {/* Bottom Section */}
       <div className="p-4 border-t border-gray-100">
-        <div className="bg-gray-50 rounded-2xl p-5 relative overflow-hidden group cursor-pointer hover:bg-gray-100 transition-colors">
+        {/* Use a mailto: deep-link so clicking opens the user's email client. Keep styles identical. */}
+        <a
+          href={`mailto:${supportEmail}`}
+          className="bg-gray-50 rounded-2xl p-5 relative overflow-hidden group hover:bg-gray-100 transition-colors block"
+          aria-label={`Contact support at ${supportEmail}`}
+        >
           <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-pink-100 rounded-full blur-2xl opacity-50 group-hover:opacity-70 transition-opacity"></div>
           <div className="relative z-10 flex items-start gap-3">
             <div className="p-2 bg-white rounded-lg shadow-sm text-pink-600">
@@ -89,7 +96,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
               <p className="text-xs text-gray-500 mt-0.5">Contact our support team</p>
             </div>
           </div>
-        </div>
+        </a>
       </div>
     </div>
   );

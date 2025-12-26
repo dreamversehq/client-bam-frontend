@@ -115,9 +115,9 @@ export default function DashboardPage() {
              isLoading={loadingTransactions}
            />
            <LastLogin 
-             date={new Date().toISOString()} 
+             date={user?.lastLoginAt || user?.createdAt || new Date().toISOString()} 
              location="Lagos, NG" 
-             isLoading={false} // Static data for now
+             isLoading={loadingUser} 
            />
         </div>
       </section>

@@ -10,6 +10,7 @@ export interface User {
   avatar?: string | null;
   createdAt: string;
   updatedAt: string;
+  lastLoginAt?: string;
 }
 
 export enum TransactionType {

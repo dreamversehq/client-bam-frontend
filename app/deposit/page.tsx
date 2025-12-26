@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { NumericFormat } from 'react-number-format';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +70,10 @@ function DepositContent() {
 
   const handleDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amt = Number(amount);
+    // Remove grouping separators and parse to float (handles values like "10,000.00")
+    const parsed = parseFloat((amount || '').toString().replace(/,/g, ''));
+    const amt = parsed;
+    console.log('[DepositPage] parsed amount:', { amount, parsed, amt });
     if (isNaN(amt) || amt <= 0) {
       setToast({ open: true, message: "Please enter a valid amount greater than 0", type: "error" });
       return;
@@ -121,15 +125,36 @@ function DepositContent() {
             <form className="space-y-4" onSubmit={handleDeposit}>
               <div className="space-y-2">
                 <label htmlFor="amount" className="text-sm font-medium">Amount (₦)</label>
-                <Input
+                {/* <Input
                   id="amount"
                   type="number"
-                  min="1"
-                  step="any"
+                  min="100"
                   placeholder="Enter deposit amount"
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
                   required
+                /> */}
+                <NumericFormat
+                  id="amount"
+                  customInput={Input}
+                  thousandSeparator="," 
+                  decimalScale={2}
+                  fixedDecimalScale={true}
+                  allowNegative={false}
+                  placeholder="Enter deposit amount"
+                  value={amount}
+                  onValueChange={(values) => {
+                    // values.formattedValue -> e.g. "1,234.00"
+                    // values.floatValue -> numeric e.g. 1234
+                    setAmount(values.formattedValue || '');
+                  }}
+                  isAllowed={(values) => {
+                    // Prevent values that are zero or negative
+                    const { floatValue } = values;
+                    if (floatValue === undefined) return true; // allow typing
+                    return floatValue >= 0;
+                  }}
+                  inputMode="numeric"
                 />
               </div>
               <Button

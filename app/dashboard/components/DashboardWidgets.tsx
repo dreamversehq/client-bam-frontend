@@ -15,6 +15,34 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
+const timeAgo = (dateString: string) => {
+  const now = new Date();
+  const then = new Date(dateString);
+  const diff = Math.floor((now.getTime() - then.getTime()) / 1000); // seconds
+
+  if (isNaN(diff) || diff < 0) return 'just now';
+
+  const units: { limit: number; name: string; inSeconds: number }[] = [
+    { limit: 60, name: 'second', inSeconds: 1 },
+    { limit: 3600, name: 'minute', inSeconds: 60 },
+    { limit: 86400, name: 'hour', inSeconds: 3600 },
+    { limit: 604800, name: 'day', inSeconds: 86400 },
+    { limit: 2629800, name: 'week', inSeconds: 604800 }, // approx month
+    { limit: 31557600, name: 'month', inSeconds: 2629800 },
+    { limit: Infinity, name: 'year', inSeconds: 31557600 },
+  ];
+
+  for (let i = 0; i < units.length; i++) {
+    const u = units[i];
+    if (diff < u.limit) {
+      const value = Math.floor(diff / u.inSeconds) || 1;
+      return `${value} ${u.name}${value > 1 ? 's' : ''} ago`;
+    }
+  }
+
+  return formatDate(dateString);
+};
+
 interface RecentDepositsProps {
   amount: number;
   date: string;
@@ -73,8 +101,8 @@ export function LastLogin({ date, location, isLoading = false }: LastLoginProps)
             </>
           ) : (
             <>
-              <div className="text-lg font-bold text-gray-900">{formatDate(date)}</div>
-              {location && <div className="text-xs font-medium text-gray-400">{location}</div>}
+              <div className="text-lg font-bold text-gray-900">{timeAgo(date)}</div>
+              <div className="text-xs font-medium text-gray-400">{formatDate(date)}{location ? ` • ${location}` : ''}</div>
             </>
           )}
         </div>

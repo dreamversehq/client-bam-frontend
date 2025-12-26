@@ -107,41 +107,32 @@ export const authApi = {
 
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await api.post<any>('/auth/register', data);
-    
+
     console.log('[authApi.register] Raw response data:', response.data);
     const responseData = response.data;
     const authData = responseData.data || responseData;
 
-    const accessToken = authData.tokens?.access?.token || authData.access;
-    const refreshToken = authData.tokens?.refresh?.token || authData.refresh;
-
-    if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-      
-      if (authData.user) {
-        localStorage.setItem('user', JSON.stringify(authData.user));
-      } else {
-         try {
-          const base64Url = accessToken.split('.')[1];
-          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-          const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          }).join(''));
-          
-          const payload = JSON.parse(jsonPayload);
-          const userId = payload.sub;
-          
-          if (userId) {
-            const userResponse = await api.get(`/users/me`);
-            const userData = (userResponse.data as any).data || userResponse.data;
-            localStorage.setItem('user', JSON.stringify(userData));
-          }
-        } catch (e) {
-          console.error('[authApi.register] Failed to decode token or fetch user profile:', e);
+    // Some backends only set lastLoginAt when the user explicitly logs in.
+    // To ensure the client sees the same state as a fresh login (and to populate lastLoginAt),
+    // call the login endpoint using the provided credentials after registration.
+    try {
+      // It's safe to call login here since authApi.login will save tokens and user into localStorage.
+      // We cast to any because RegisterRequest and LoginRequest have compatible shapes for email/password.
+      await authApi.login((data as any) as LoginRequest);
+    } catch (e) {
+      console.error('[authApi.register] Login after register failed:', e);
+      // Fallback: if login fails but tokens were returned in register response, persist them as before
+      const accessToken = authData.tokens?.access?.token || authData.access;
+      const refreshToken = authData.tokens?.refresh?.token || authData.refresh;
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+        if (authData.user) {
+          localStorage.setItem('user', JSON.stringify(authData.user));
         }
       }
     }
+
     return response.data;
   },
 
