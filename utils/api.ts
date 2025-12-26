@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AuthResponse, LoginRequest, RegisterRequest, Transaction, TransactionResponse, User } from '../types';
 
-const API_URL = 'https://client-bam-backend.onrender.com/v1';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://client-bam-backend.onrender.com/v1';
 
 const api = axios.create({
   baseURL: API_URL,
